@@ -42,13 +42,13 @@ function FragmentRow({ result, onOpenSession }: { result: FragmentResult; onOpen
       {/* Source + project + date */}
       <div className="flex items-center gap-2 mb-1.5">
         <SourceBadge source={result.source} />
-        <span className="text-xs text-neutral-500 dark:text-neutral-400 truncate flex-1">{project}</span>
+        <span className="text-xs text-neutral-500 dark:text-neutral-400 truncate flex-1">You discussed this · {project}</span>
         <span className="text-xs text-neutral-400 flex-none">{date}</span>
       </div>
 
-      {/* Fragment snippet */}
+      {/* Fragment snippet — monospace per DESIGN.md */}
       <p
-        className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed [&>strong]:font-semibold [&>strong]:text-neutral-900 dark:[&>strong]:text-neutral-100 select-text cursor-text"
+        className="font-mono text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed [&>strong]:font-semibold [&>strong]:text-[#C85A00] dark:[&>strong]:text-[#F07020] select-text cursor-text"
         dangerouslySetInnerHTML={{ __html: snippet }}
       />
 
@@ -65,13 +65,13 @@ function FragmentRow({ result, onOpenSession }: { result: FragmentResult; onOpen
 
 function SourceBadge({ source }: { source: string }) {
   const isClaude = source === 'claude'
+  // Source badge colors per DESIGN.md: Claude=#6B5B8A, Codex=#1A6B3C
   return (
-    <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-      isClaude
-        ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-        : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-    }`}>
-      {isClaude ? 'Claude' : 'Codex'}
+    <span
+      className="text-[10px] font-semibold font-mono px-1.5 py-0.5 rounded text-white"
+      style={{ background: isClaude ? '#6B5B8A' : '#1A6B3C' }}
+    >
+      {isClaude ? 'claude' : 'codex'}
     </span>
   )
 }
