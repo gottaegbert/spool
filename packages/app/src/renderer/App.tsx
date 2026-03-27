@@ -13,12 +13,13 @@ export default function App() {
   const [results, setResults] = useState<FragmentResult[]>([])
   const [selectedSession, setSelectedSession] = useState<string | null>(null)
   const [view, setView] = useState<View>('search')
+  const [homeMode, setHomeMode] = useState(true)
   const [isSearching, setIsSearching] = useState(false)
   const [syncStatus, setSyncStatus] = useState<{ phase: string; count: number; total: number } | null>(null)
   const [status, setStatus] = useState<StatusInfo | null>(null)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const isHomeMode = !query.trim() && view === 'search' && !selectedSession
+  const isHomeMode = homeMode && view === 'search' && !selectedSession
 
   useEffect(() => {
     if (!window.spool) return
@@ -55,9 +56,20 @@ export default function App() {
 
   const handleQueryChange = useCallback((q: string) => {
     setQuery(q)
+    if (!q.trim()) setHomeMode(true)
     if (searchTimer.current) clearTimeout(searchTimer.current)
     searchTimer.current = setTimeout(() => doSearch(q), 200)
   }, [doSearch])
+
+  const handleSubmit = useCallback(() => {
+    if (query.trim()) setHomeMode(false)
+  }, [query])
+
+  const handleSelectSuggestion = useCallback((uuid: string) => {
+    setHomeMode(false)
+    setSelectedSession(uuid)
+    setView('session')
+  }, [])
 
   const handleOpenSession = useCallback((uuid: string) => {
     setSelectedSession(uuid); setView('session')
@@ -74,6 +86,10 @@ export default function App() {
           <HomeView
             query={query}
             onChange={handleQueryChange}
+            onSubmit={handleSubmit}
+            onSelectSuggestion={handleSelectSuggestion}
+            suggestions={results}
+            isSearching={isSearching}
             claudeCount={status?.claudeSessions ?? null}
             codexCount={status?.codexSessions ?? null}
           />

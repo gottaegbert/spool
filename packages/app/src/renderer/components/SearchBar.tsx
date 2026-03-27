@@ -4,11 +4,12 @@ interface Props {
   query: string
   onChange: (q: string) => void
   onBack?: () => void
+  onSubmit?: () => void
   isSearching: boolean
   variant?: 'home' | 'compact'
 }
 
-export default function SearchBar({ query, onChange, onBack, isSearching, variant = 'compact' }: Props) {
+export default function SearchBar({ query, onChange, onBack, onSubmit, isSearching, variant = 'compact' }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -48,6 +49,9 @@ export default function SearchBar({ query, onChange, onBack, isSearching, varian
           type="text"
           value={query}
           onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing) onSubmit?.()
+          }}
           placeholder="Search my thinking…"
           className={[
             'w-full rounded-full outline-none',
