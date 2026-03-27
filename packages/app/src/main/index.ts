@@ -16,9 +16,7 @@ function createWindow(): BrowserWindow {
     height: 620,
     minWidth: 640,
     minHeight: 480,
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 16, y: 16 },
-    backgroundColor: nativeTheme.shouldUseDarkColors ? '#1a1a1a' : '#ffffff',
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#141410' : '#FAFAF8',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -134,8 +132,3 @@ ipcMain.handle('spool:copy-fragment', (_e, { text }: { text: string }) => {
   return { ok: true }
 })
 
-ipcMain.on('spool:move-window', (_e, { dx, dy }: { dx: number; dy: number }) => {
-  if (!mainWindow) return
-  const [x, y] = mainWindow.getPosition()
-  mainWindow.setPosition(x + dx, y + dy)
-})

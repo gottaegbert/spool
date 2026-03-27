@@ -25,9 +25,6 @@ const api = {
   copyFragment: (text: string): Promise<{ ok: boolean }> =>
     ipcRenderer.invoke('spool:copy-fragment', { text }),
 
-  moveWindow: (dx: number, dy: number): void =>
-    ipcRenderer.send('spool:move-window', { dx, dy }),
-
   onSyncProgress: (cb: (e: { phase: string; count: number; total: number }) => void) => {
     const handler = (_: Electron.IpcRendererEvent, data: unknown) => cb(data as { phase: string; count: number; total: number })
     ipcRenderer.on('spool:sync-progress', handler)

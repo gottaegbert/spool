@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, type MouseEvent } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import type { FragmentResult, StatusInfo } from '@spool/core'
 import SearchBar from './components/SearchBar.js'
 import FragmentResults from './components/FragmentResults.js'
@@ -7,9 +7,6 @@ import SessionDetail from './components/SessionDetail.js'
 import StatusBar from './components/StatusBar.js'
 
 type View = 'search' | 'session'
-
-// Height of the titlebar zone in px — must match h-10 (40px) used in compact topbar
-const TITLEBAR_HEIGHT = 40
 
 export default function App() {
   const [query, setQuery] = useState('')
@@ -20,7 +17,6 @@ export default function App() {
   const [syncStatus, setSyncStatus] = useState<{ phase: string; count: number; total: number } | null>(null)
   const [status, setStatus] = useState<StatusInfo | null>(null)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const dragState = useRef<{ lastX: number; lastY: number } | null>(null)
 
   const isHomeMode = !query.trim() && view === 'search' && !selectedSession
 
@@ -71,49 +67,9 @@ export default function App() {
     setView('search'); setSelectedSession(null)
   }, [])
 
-  // Drag via root div + clientY guard — NOT a z-index overlay.
-  //
-  // Why NOT an overlay: an absolute div with z-20 sits on top of the search input
-  // (z-10). When the user clicks the input, the browser dispatches mousedown to the
-  // TOPMOST element (the overlay), so e.target = overlay div, NOT the input.
-  // `closest('input')` on the overlay returns null → drag starts → input can never
-  // be focused by clicking.
-  //
-  // With the handler on the root div and NO overlay: the input receives mousedown
-  // first (hit test finds it directly), then the event bubbles up to the root div.
-  // At that point e.target = input → closest('input') returns it → guard bails.
-  // Non-interactive content in the top 40px → closest returns null → drag starts.
-  const handleDragMouseDown = useCallback((e: MouseEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return
-    if ((e.target as HTMLElement).closest('button, input, a, select, textarea')) return
-    if (e.clientY > TITLEBAR_HEIGHT) return   // only drag from titlebar zone
-    dragState.current = { lastX: e.screenX, lastY: e.screenY }
-  }, [])
-
-  useEffect(() => {
-    const onMove = (e: globalThis.MouseEvent) => {
-      if (!dragState.current) return
-      const dx = e.screenX - dragState.current.lastX
-      const dy = e.screenY - dragState.current.lastY
-      dragState.current.lastX = e.screenX
-      dragState.current.lastY = e.screenY
-      window.spool?.moveWindow(dx, dy)
-    }
-    const onUp = () => { dragState.current = null }
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
-    return () => {
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
-    }
-  }, [])
-
   return (
-    <div
-      onMouseDown={handleDragMouseDown}
-      className="flex flex-col h-screen bg-warm-bg dark:bg-dark-bg text-warm-text dark:text-dark-text"
-    >
-      <div key={isHomeMode ? 'home' : 'results'} className="flex flex-col flex-1 min-h-0 animate-in fade-in duration-150">
+    <div className="flex flex-col h-screen bg-warm-bg dark:bg-dark-bg text-warm-text dark:text-dark-text">
+      <div className="flex flex-col flex-1 min-h-0">
         {isHomeMode ? (
           <HomeView
             query={query}
@@ -123,13 +79,7 @@ export default function App() {
           />
         ) : (
           <>
-            {/*
-              Compact results topbar — h-10 (40px) = TITLEBAR_HEIGHT.
-              pl-[72px]: traffic lights span x:16–x:~68 with trafficLightPosition:{x:16};
-              content must start at x:72+ to avoid rendering behind the buttons.
-              The S. wordmark and empty space to its left are the drag handles.
-            */}
-            <div className="flex items-center gap-3 pl-[72px] pr-4 h-10 flex-none">
+            <div className="flex items-center gap-3 px-4 h-10 flex-none mt-2">
               <span className="text-base font-bold tracking-[-0.04em] flex-none select-none">
                 S<span className="text-accent">.</span>
               </span>
