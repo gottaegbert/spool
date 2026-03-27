@@ -1,0 +1,14 @@
+{
+  "name": "@spool/landing",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve public -l 3001",
+    "build": "cp -r public dist",
+    "deploy": "wrangler pages deploy dist --project-name spool-landing",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

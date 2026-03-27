@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spool — The missing search engine for your own data</title>
+  <meta name="description" content="Search your Claude Code sessions, ChatGPT history, GitHub stars, Twitter bookmarks, and YouTube likes — locally.">
+  <meta name="theme-color" content="#141410" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#FAFAF8" media="(prefers-color-scheme: light)">
+
+  <!-- Favicon -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png">
+  <link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://spool.pro">
+  <meta property="og:title" content="Spool — The missing search engine for your own data">
+  <meta property="og:description" content="Search your Claude Code sessions, ChatGPT history, GitHub stars, Twitter bookmarks, and YouTube likes — locally.">
+  <meta property="og:image" content="https://spool.pro/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Spool">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Spool — The missing search engine for your own data">
+  <meta name="twitter:description" content="Search your Claude Code sessions, ChatGPT history, GitHub stars, Twitter bookmarks, and YouTube likes — locally.">
+  <meta name="twitter:image" content="https://spool.pro/og-image.png">
+
+  <!-- SEO -->
+  <link rel="canonical" href="https://spool.pro">
+  <meta name="robots" content="index, follow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #FAFAF8;
+      --surface: #F4F4F0;
+      --surface2: #EEEEE9;
+      --border: #E8E8E2;
+      --border2: #D8D8D0;
+      --text: #1C1C18;
+      --muted: #6B6B60;
+      --faint: #ADADAA;
+      --accent: #C85A00;
+      --accent-bg: #FFF3E8;
+      --accent-subtle: rgba(200, 90, 0, 0.08);
+      --src-claude: #6B5B8A;
+      --src-twitter: #3A3A3A;
+      --src-github: #555555;
+      --src-youtube: #B22222;
+      --src-chatgpt: #10A37F;
+      --src-codex: #1A6B3C;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #141410;
+        --surface: #1C1C18;
+        --surface2: #242420;
+        --border: #2E2E28;
+        --border2: #3A3A34;
+        --text: #F2F2EC;
+        --muted: #8A8A80;
+        --faint: #505048;
+        --accent: #F07020;
+        --accent-bg: #2A1800;
+        --accent-subtle: rgba(240, 112, 32, 0.1);
+        --src-claude: #9B8BBF;
+        --src-twitter: #888880;
+        --src-github: #999990;
+        --src-youtube: #D44444;
+        --src-chatgpt: #20C38F;
+        --src-codex: #40C87A;
+      }
+    }
+
+    [data-theme="dark"] {
+      --bg: #141410;
+      --surface: #1C1C18;
+      --surface2: #242420;
+      --border: #2E2E28;
+      --border2: #3A3A34;
+      --text: #F2F2EC;
+      --muted: #8A8A80;
+      --faint: #505048;
+      --accent: #F07020;
+      --accent-bg: #2A1800;
+      --accent-subtle: rgba(240, 112, 32, 0.1);
+      --src-claude: #9B8BBF;
+      --src-twitter: #888880;
+      --src-github: #999990;
+      --src-youtube: #D44444;
+      --src-chatgpt: #20C38F;
+      --src-codex: #40C87A;
+    }
+
+    html {
+      font-family: 'Geist', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-height: 100vh;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: color-mix(in srgb, var(--bg) 85%, transparent);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      text-decoration: none;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-logo svg {
+      width: 22px;
+      height: 22px;
+      color: var(--accent);
+    }
+
+    .nav-logo .dot { color: var(--accent); margin-left: -4px; }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .nav-links a {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 80ms;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .theme-toggle {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 8px;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1;
+      transition: background 80ms, border-color 80ms;
+    }
+
+    .theme-toggle:hover {
+      background: var(--surface2);
+      border-color: var(--border2);
+    }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+    }
+
+    .hero-icon {
+      width: 64px;
+      height: 64px;
+      color: var(--accent);
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 56px);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      max-width: 720px;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 .dot { color: var(--accent); }
+
+    .hero .subtitle {
+      font-size: clamp(15px, 2vw, 18px);
+      color: var(--muted);
+      max-width: 560px;
+      line-height: 1.6;
+      margin-bottom: 40px;
+    }
+
+    /* ── Fake search bar ── */
+    .hero-search {
+      width: 100%;
+      max-width: 520px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 9999px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.02);
+      margin-bottom: 24px;
+    }
+
+    .hero-search svg {
+      width: 18px;
+      height: 18px;
+      color: var(--faint);
+      flex-shrink: 0;
+    }
+
+    .hero-search .typed {
+      font-family: 'Geist', sans-serif;
+      font-size: 15px;
+      color: var(--faint);
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .hero-search .typed .cursor {
+      display: inline-block;
+      width: 1px;
+      height: 18px;
+      background: var(--accent);
+      vertical-align: text-bottom;
+      margin-left: 1px;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    /* ── Source chips ── */
+    .source-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      max-width: 600px;
+    }
+
+    .chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      transition: background 80ms, border-color 80ms;
+    }
+
+    .chip:hover {
+      background: var(--surface2);
+      border-color: var(--border2);
+    }
+
+    .chip-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .chip-count {
+      font-family: 'Geist Mono', monospace;
+      font-size: 10px;
+      font-variant-numeric: tabular-nums;
+      color: var(--faint);
+    }
+
+    /* ── Sections ── */
+    section {
+      padding: 100px 24px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    section h2 {
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+
+    section .desc {
+      font-size: 15px;
+      color: var(--muted);
+      max-width: 560px;
+      line-height: 1.7;
+      margin-bottom: 48px;
+    }
+
+    /* ── Feature cards ── */
+    .features {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 48px;
+    }
+
+    .feature {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .feature:nth-child(even) {
+      direction: rtl;
+    }
+
+    .feature:nth-child(even) > * {
+      direction: ltr;
+    }
+
+    .feature-text h3 {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+
+    .feature-text p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .feature-visual {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      font-family: 'Geist Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.8;
+      overflow: hidden;
+    }
+
+    .feature-visual .line {
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+    }
+
+    .feature-visual .prompt {
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .feature-visual .path {
+      color: var(--faint);
+      font-size: 10px;
+    }
+
+    .feature-visual .highlight {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .feature-visual .dim { color: var(--faint); }
+
+    .feature-visual .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      background: var(--accent-subtle);
+      color: var(--accent);
+    }
+
+    .feature-visual .src-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    /* ── How it works ── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      counter-reset: step;
+    }
+
+    .step {
+      counter-increment: step;
+      padding: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      transition: border-color 80ms;
+    }
+
+    .step:hover {
+      border-color: var(--border2);
+    }
+
+    .step-number {
+      font-family: 'Geist Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .step h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .step p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .step code {
+      font-family: 'Geist Mono', monospace;
+      font-size: 11px;
+      padding: 1px 5px;
+      background: var(--surface2);
+      border-radius: 4px;
+      color: var(--text);
+    }
+
+    /* ── Platform grid ── */
+    .platform-section {
+      text-align: center;
+    }
+
+    .platform-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    .platform-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .platform-pill .p-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .platform-more {
+      padding: 8px 16px;
+      border: 1px dashed var(--border2);
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--faint);
+    }
+
+    /* ── CTA ── */
+    .cta-section {
+      text-align: center;
+      padding: 120px 24px;
+    }
+
+    .cta-section h2 {
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+    }
+
+    .cta-section p {
+      color: var(--muted);
+      font-size: 15px;
+      margin-bottom: 32px;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-family: 'Geist', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 120ms;
+    }
+
+    .btn-primary:hover { opacity: 0.9; }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      font-family: 'Geist', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 80ms, border-color 80ms;
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface);
+      border-color: var(--border2);
+    }
+
+    /* ── Footer ── */
+    footer {
+      padding: 32px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--faint);
+    }
+
+    footer a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    footer a:hover { color: var(--text); }
+
+    /* ── Divider ── */
+    .divider {
+      max-width: 960px;
+      margin: 0 auto;
+      border: none;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      nav { padding: 12px 16px; }
+      .nav-links { gap: 16px; }
+
+      .feature {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+
+      .feature:nth-child(even) {
+        direction: ltr;
+      }
+
+      .steps {
+        grid-template-columns: 1fr;
+      }
+
+      section { padding: 64px 20px; }
+      .hero { padding: 100px 20px 64px; }
+    }
+
+    /* ── Typing animation ── */
+    .typed-text {
+      display: inline;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <a href="#" class="nav-logo">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor">
+        <ellipse cx="16" cy="9" rx="12" ry="4.5" stroke-width="1.8"/>
+        <line x1="4" y1="9" x2="4" y2="22" stroke-width="1.8"/>
+        <line x1="28" y1="9" x2="28" y2="22" stroke-width="1.8"/>
+        <path d="M4 22 C4 24.5 9 27 16 27 C23 27 28 24.5 28 22" stroke-width="1.8"/>
+        <ellipse cx="16" cy="11" rx="7" ry="2.5" stroke-width="1.2"/>
+        <line x1="9" y1="11" x2="9" y2="20" stroke-width="1.2"/>
+        <line x1="23" y1="11" x2="23" y2="20" stroke-width="1.2"/>
+        <path d="M9 20 C9 21.5 12 23 16 23 C20 23 23 21.5 23 20" stroke-width="1.2"/>
+        <ellipse cx="16" cy="11" rx="3" ry="1.2" fill="currentColor" stroke="none"/>
+      </svg>
+Spool<span class="dot">.</span></a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#sources">Sources</a>
+      <a href="https://github.com/spool-lab/spool">GitHub</a>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"/>
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <div class="hero">
+    <svg class="hero-icon" viewBox="0 0 32 32" fill="none" stroke="currentColor">
+      <ellipse cx="16" cy="9" rx="12" ry="4.5" stroke-width="1.8"/>
+      <line x1="4" y1="9" x2="4" y2="22" stroke-width="1.8"/>
+      <line x1="28" y1="9" x2="28" y2="22" stroke-width="1.8"/>
+      <path d="M4 22 C4 24.5 9 27 16 27 C23 27 28 24.5 28 22" stroke-width="1.8"/>
+      <ellipse cx="16" cy="11" rx="7" ry="2.5" stroke-width="1.2"/>
+      <line x1="9" y1="11" x2="9" y2="20" stroke-width="1.2"/>
+      <line x1="23" y1="11" x2="23" y2="20" stroke-width="1.2"/>
+      <path d="M9 20 C9 21.5 12 23 16 23 C20 23 23 21.5 23 20" stroke-width="1.2"/>
+      <ellipse cx="16" cy="11" rx="3" ry="1.2" fill="currentColor" stroke="none"/>
+    </svg>
+
+    <h1>The missing search engine<br>for your own data<span class="dot">.</span></h1>
+
+    <p class="subtitle">
+      Search your Claude Code sessions, ChatGPT history, GitHub stars, Twitter bookmarks, and YouTube likes — locally, instantly.
+    </p>
+
+    <!-- Decorative search bar -->
+    <div class="hero-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+      </svg>
+      <span class="typed"><span class="typed-text" id="typed-text"></span><span class="cursor"></span></span>
+    </div>
+
+    <!-- Source chips -->
+    <div class="source-chips">
+      <div class="chip">
+        <span class="chip-dot" style="background: var(--src-claude)"></span>
+        Claude Code
+        <span class="chip-count">342</span>
+      </div>
+      <div class="chip">
+        <span class="chip-dot" style="background: var(--src-chatgpt)"></span>
+        ChatGPT
+        <span class="chip-count">128</span>
+      </div>
+      <div class="chip">
+        <span class="chip-dot" style="background: var(--src-github)"></span>
+        GitHub Stars
+        <span class="chip-count">1.2k</span>
+      </div>
+      <div class="chip">
+        <span class="chip-dot" style="background: var(--src-twitter)"></span>
+        Twitter / X
+        <span class="chip-count">891</span>
+      </div>
+      <div class="chip">
+        <span class="chip-dot" style="background: var(--src-youtube)"></span>
+        YouTube
+        <span class="chip-count">64</span>
+      </div>
+      <div class="chip">
+        <span class="chip-dot" style="background: var(--src-codex)"></span>
+        Codex CLI
+        <span class="chip-count">57</span>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- How it works -->
+  <section id="how">
+    <div class="section-label">How it works</div>
+    <h2>Three steps. Your data, your machine.</h2>
+    <p class="desc">
+      Everything is indexed locally. Your thinking stays where it belongs.
+    </p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">01</div>
+        <h3>Pull your data with OpenCLI</h3>
+        <p><a href="https://github.com/jackwener/opencli" target="_blank" rel="noopener" style="color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent); font-weight: 600;">OpenCLI</a> pulls your bookmarks, stars, and saves from 50+ platforms to your machine. Spool indexes everything it captures.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">02</div>
+        <h3>Index everything</h3>
+        <p>Spool watches <code>~/.claude/</code> and <code>~/.codex/</code> in real time. Every agent conversation, searchable the moment it's written.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">03</div>
+        <h3>Search and flow</h3>
+        <p>A <code>/spool</code> skill in Claude Code. A <code>spool</code> CLI. Ask your agent to "build on last month's auth discussion" and it actually can.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Features -->
+  <section>
+    <div class="section-label">Built for agents</div>
+    <h2>Your coding agent is already the best<br>search engine you have.</h2>
+    <p class="desc">
+      Spool lets Claude Code, Codex, and any coding agent search your personal data — past sessions, bookmarks, stars, saves — from a single search box.
+    </p>
+
+    <div class="features">
+      <!-- Feature 1: Session indexing -->
+      <div class="feature">
+        <div class="feature-text">
+          <h3>Every agent session, indexed automatically</h3>
+          <p>Spool watches your session directories in real time. Every conversation you have with Claude Code or Codex becomes searchable the moment it's written. No manual export, no copy-paste.</p>
+        </div>
+        <div class="feature-visual">
+          <div class="line"><span class="dim">~/.claude/sessions/</span></div>
+          <div class="line" style="margin-top: 4px">
+            <span class="prompt">&#9654;</span>
+            <span class="highlight">auth-middleware-rewrite</span>
+          </div>
+          <div class="line">
+            <span style="width: 14px; display: inline-block"></span>
+            <span class="dim">You discussed this &middot; 2h ago</span>
+          </div>
+          <div class="line" style="margin-top: 8px">
+            <span class="prompt">&#9654;</span>
+            <span class="highlight">postgres-migration-v3</span>
+          </div>
+          <div class="line">
+            <span style="width: 14px; display: inline-block"></span>
+            <span class="dim">You discussed this &middot; yesterday</span>
+          </div>
+          <div class="line" style="margin-top: 8px">
+            <span class="prompt">&#9654;</span>
+            <span class="highlight">rate-limiter-redis</span>
+          </div>
+          <div class="line">
+            <span style="width: 14px; display: inline-block"></span>
+            <span class="dim">You discussed this &middot; Mar 12</span>
+          </div>
+          <div style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px;">
+            <span class="badge">&#9679; synced &middot; 342 sessions</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 2: Context flows back -->
+      <div class="feature">
+        <div class="feature-text">
+          <h3>Context that flows back in</h3>
+          <p>A <code>/spool</code> skill inside Claude Code. Ask your agent to "build on last month's auth discussion" and it feeds matching fragments from your past sessions directly into the conversation.</p>
+        </div>
+        <div class="feature-visual">
+          <div class="line"><span class="prompt">$</span> <span class="highlight">claude</span></div>
+          <div class="line" style="margin-top: 8px"><span class="dim">&gt;</span> <span>build on the auth middleware</span></div>
+          <div class="line"><span class="dim">&gt;</span> <span>discussion from last week</span></div>
+          <div style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px;">
+            <div class="line"><span class="dim">spool found 3 fragments:</span></div>
+            <div class="line" style="margin-top: 4px">
+              <span class="src-badge" style="background: color-mix(in srgb, var(--src-claude) 15%, transparent); color: var(--src-claude);">claude</span>
+              <span style="margin-left: 4px">auth-middleware-rewrite</span>
+            </div>
+            <div class="line" style="margin-top: 4px">
+              <span class="src-badge" style="background: color-mix(in srgb, var(--src-github) 15%, transparent); color: var(--src-github);">github</span>
+              <span style="margin-left: 4px">express-jwt#auth-flow</span>
+            </div>
+            <div class="line" style="margin-top: 4px">
+              <span class="src-badge" style="background: color-mix(in srgb, var(--src-twitter) 15%, transparent); color: var(--src-twitter);">twitter</span>
+              <span style="margin-left: 4px">@thdxr/jwt-best-practices</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Platforms -->
+  <section id="sources" class="platform-section">
+    <div class="section-label">Data sources</div>
+    <h2>50+ platforms, pulled to your machine.</h2>
+    <p class="desc" style="margin-left: auto; margin-right: auto;">
+      Powered by <a href="https://github.com/jackwener/opencli" target="_blank" rel="noopener" style="color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent); font-weight: 600;">OpenCLI</a> — pull your bookmarks, stars, and saves from any platform to your machine. Spool indexes them all locally.
+    </p>
+    <div class="platform-grid">
+      <div class="platform-pill">
+        <span class="p-dot" style="background: var(--src-claude)"></span>
+        Claude Code
+      </div>
+      <div class="platform-pill">
+        <span class="p-dot" style="background: var(--src-codex)"></span>
+        Codex CLI
+      </div>
+      <div class="platform-pill">
+        <span class="p-dot" style="background: var(--src-chatgpt)"></span>
+        ChatGPT
+      </div>
+      <div class="platform-pill">
+        <span class="p-dot" style="background: var(--src-github)"></span>
+        GitHub Stars
+      </div>
+      <div class="platform-pill">
+        <span class="p-dot" style="background: var(--src-twitter)"></span>
+        Twitter / X
+      </div>
+      <div class="platform-pill">
+        <span class="p-dot" style="background: var(--src-youtube)"></span>
+        YouTube
+      </div>
+      <div class="platform-pill">
+        <span class="p-dot" style="background: #E25D33"></span>
+        Reddit
+      </div>
+      <div class="platform-pill">
+        <span class="p-dot" style="background: #FF6719"></span>
+        Substack
+      </div>
+      <div class="platform-pill">
+        <span class="p-dot" style="background: #0A66C2"></span>
+        LinkedIn
+      </div>
+      <div class="platform-more">+ 40 more</div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- CTA -->
+  <div class="cta-section">
+    <h2>Your thinking, searchable<span class="dot">.</span></h2>
+    <p>Local-first. Open source. Built for super-individuals who think with AI.</p>
+    <div class="cta-buttons">
+      <a href="https://github.com/spool-lab/spool/releases/latest" class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download for macOS
+      </a>
+      <a href="https://github.com/spool-lab/spool" target="_blank" rel="noopener" class="btn-secondary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+        Star on GitHub
+      </a>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>Spool by <a href="https://github.com/doodlewind">Yifeng</a>. Data powered by <a href="https://github.com/jackwener/opencli">OpenCLI</a>.</p>
+  </footer>
+
+  <script>
+    // Theme toggle
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      if (current === 'dark') {
+        html.setAttribute('data-theme', 'light');
+      } else if (current === 'light') {
+        html.removeAttribute('data-theme');
+      } else {
+        html.setAttribute('data-theme', 'dark');
+      }
+    }
+
+    // Typing animation
+    const phrases = [
+      'auth middleware rewrite from last week',
+      'that Redis caching pattern I bookmarked',
+      'JWT best practices thread on Twitter',
+      'postgres migration discussion',
+      'how did I set up rate limiting?',
+    ];
+
+    const el = document.getElementById('typed-text');
+    let phraseIndex = 0;
+    let charIndex = 0;
+    let deleting = false;
+    let pause = 0;
+
+    function type() {
+      const phrase = phrases[phraseIndex];
+
+      if (pause > 0) {
+        pause--;
+        requestAnimationFrame(() => setTimeout(type, 30));
+        return;
+      }
+
+      if (!deleting) {
+        el.textContent = phrase.substring(0, charIndex + 1);
+        charIndex++;
+        if (charIndex === phrase.length) {
+          deleting = true;
+          pause = 60;
+        }
+      } else {
+        el.textContent = phrase.substring(0, charIndex - 1);
+        charIndex--;
+        if (charIndex === 0) {
+          deleting = false;
+          phraseIndex = (phraseIndex + 1) % phrases.length;
+          pause = 15;
+        }
+      }
+
+      const speed = deleting ? 25 : 55 + Math.random() * 35;
+      setTimeout(type, speed);
+    }
+
+    type();
+  </script>
+
+</body>
+</html>
