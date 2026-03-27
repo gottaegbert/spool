@@ -92,7 +92,8 @@ function getSyncStatusText(
 
 function formatTimeAgo(iso: string): string {
   try {
-    const diff = Date.now() - new Date(iso).getTime()
+    const utcIso = iso.endsWith('Z') ? iso : iso + 'Z'
+    const diff = Date.now() - new Date(utcIso).getTime()
     const minutes = Math.floor(diff / 60000)
     if (minutes < 1) return 'just now'
     if (minutes < 60) return `${minutes}m ago`

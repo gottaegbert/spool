@@ -23,5 +23,5 @@ function formatBytes(bytes: number): string {
 }
 
 function formatDate(iso: string): string {
-  try { return new Date(iso).toLocaleString() } catch { return iso }
+  try { return new Date(iso.endsWith('Z') ? iso : iso + 'Z').toLocaleString() } catch { return iso }
 }
