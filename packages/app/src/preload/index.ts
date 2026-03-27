@@ -36,6 +36,12 @@ const api = {
     ipcRenderer.on('spool:new-sessions', handler)
     return () => ipcRenderer.removeListener('spool:new-sessions', handler)
   },
+
+  getTheme: (): Promise<'system' | 'light' | 'dark'> =>
+    ipcRenderer.invoke('spool:get-theme'),
+
+  setTheme: (theme: 'system' | 'light' | 'dark'): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke('spool:set-theme', { theme }),
 }
 
 contextBridge.exposeInMainWorld('spool', api)

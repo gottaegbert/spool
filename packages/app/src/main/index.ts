@@ -1,9 +1,12 @@
-import { app, BrowserWindow, ipcMain, nativeTheme } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, nativeTheme, nativeImage } from 'electron'
 import { join } from 'node:path'
 import { getDB, Syncer, SpoolWatcher, searchFragments, listRecentSessions, getSessionWithMessages, getStatus } from '@spool/core'
 import { setupTray } from './tray.js'
 import { execSync } from 'node:child_process'
 import type Database from 'better-sqlite3'
+
+// macOS menu bar shows the first menu's label as the app name
+app.setName('Spool')
 
 let mainWindow: BrowserWindow | null = null
 let db: Database.Database
@@ -35,6 +38,30 @@ function createWindow(): BrowserWindow {
 }
 
 app.whenReady().then(() => {
+  // Set dock icon (dev mode doesn't pick up build config)
+  const dockIconPath = join(__dirname, '../../resources/icon.icns')
+  try { app.dock?.setIcon(nativeImage.createFromPath(dockIconPath)) } catch {}
+
+  // Override the default "Electron" menu bar label on macOS
+  const appMenu = Menu.buildFromTemplate([
+    {
+      label: 'Spool',
+      submenu: [
+        { role: 'about', label: 'About Spool' },
+        { type: 'separator' },
+        { role: 'hide', label: 'Hide Spool' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit', label: 'Quit Spool' },
+      ],
+    },
+    { role: 'editMenu' },
+    { role: 'viewMenu' },
+    { role: 'windowMenu' },
+  ])
+  Menu.setApplicationMenu(appMenu)
+
   db = getDB()
   syncer = new Syncer(db, (e) => {
     mainWindow?.webContents.send('spool:sync-progress', e)
@@ -129,6 +156,15 @@ ipcMain.handle('spool:resume-cli', (_e, { sessionUuid, source }: { sessionUuid: 
 ipcMain.handle('spool:copy-fragment', (_e, { text }: { text: string }) => {
   const { clipboard } = require('electron')
   clipboard.writeText(text)
+  return { ok: true }
+})
+
+ipcMain.handle('spool:get-theme', () => {
+  return nativeTheme.themeSource
+})
+
+ipcMain.handle('spool:set-theme', (_e, { theme }: { theme: 'system' | 'light' | 'dark' }) => {
+  nativeTheme.themeSource = theme
   return { ok: true }
 })
 
