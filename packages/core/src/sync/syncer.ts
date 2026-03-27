@@ -8,6 +8,7 @@ import {
   getSourceId,
   getOrCreateProject,
   getSessionMtime,
+  getAllSessionMtimes,
   upsertSession,
   insertMessages,
 } from '../db/queries.js'
@@ -41,6 +42,8 @@ export class Syncer {
 
     this.onProgress?.({ phase: 'scanning', count: 0, total: files.length })
 
+    const knownMtimes = getAllSessionMtimes(this.db)
+
     let added = 0
     let updated = 0
     let errors = 0
@@ -49,7 +52,7 @@ export class Syncer {
     for (let i = 0; i < files.length; i += BATCH) {
       const batch = files.slice(i, i + BATCH)
       for (const file of batch) {
-        const result = this.syncFile(file.path, file.source)
+        const result = this.syncFile(file.path, file.source, knownMtimes)
         if (result === 'added') added++
         else if (result === 'updated') updated++
         else if (result === 'error') errors++
@@ -61,10 +64,12 @@ export class Syncer {
     return { added, updated, errors }
   }
 
-  syncFile(filePath: string, source: 'claude' | 'codex'): 'added' | 'updated' | 'skipped' | 'error' {
+  syncFile(filePath: string, source: 'claude' | 'codex', knownMtimes?: Map<string, string>): 'added' | 'updated' | 'skipped' | 'error' {
     try {
       const mtime = getMtime(filePath)
-      const existingMtime = getSessionMtime(this.db, filePath)
+      const existingMtime = knownMtimes
+        ? (knownMtimes.get(filePath) ?? null)
+        : getSessionMtime(this.db, filePath)
       if (existingMtime === mtime) return 'skipped'
 
       const parsed = source === 'claude'

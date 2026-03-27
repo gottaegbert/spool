@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, type MouseEvent } from 'react'
 import type { FragmentResult, Session } from '@spool/core'
 import SearchBar from './components/SearchBar.js'
 import FragmentResults from './components/FragmentResults.js'
@@ -17,6 +17,7 @@ export default function App() {
   const [isSearching, setIsSearching] = useState(false)
   const [syncStatus, setSyncStatus] = useState<{ phase: string; count: number; total: number } | null>(null)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const dragState = useRef<{ lastX: number; lastY: number } | null>(null)
 
   // Load recent sessions on mount
   useEffect(() => {
@@ -73,12 +74,42 @@ export default function App() {
     setSelectedSession(null)
   }, [])
 
+  // Custom window drag — replaces -webkit-app-region:drag which breaks when
+  // a scrollable child container has been scrolled (known Electron/Chromium bug).
+  const handleHeaderMouseDown = useCallback((e: MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return
+    if ((e.target as HTMLElement).closest('button, input, a, select, textarea')) return
+    dragState.current = { lastX: e.screenX, lastY: e.screenY }
+  }, [])
+
+  useEffect(() => {
+    const onMove = (e: globalThis.MouseEvent) => {
+      if (!dragState.current) return
+      const dx = e.screenX - dragState.current.lastX
+      const dy = e.screenY - dragState.current.lastY
+      dragState.current.lastX = e.screenX
+      dragState.current.lastY = e.screenY
+      window.spool.moveWindow(dx, dy)
+    }
+    const onUp = () => { dragState.current = null }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+    return () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+    }
+  }, [])
+
   return (
     <div className="flex flex-col h-screen bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100">
-      {/* Header: outer div is the full title bar area (draggable).
-          pt-10 ensures the search bar sits below the traffic light buttons (y:16).
-          Interactive elements inside automatically opt out via styles.css. */}
-      <div className="drag-region flex-none pt-10 px-4 pb-3">
+      {/* Keep a dedicated drag strip above the search UI so list scrolling can never
+          cover the title-bar hit target. */}
+      <div
+        onMouseDown={handleHeaderMouseDown}
+        className="flex-none h-10 shrink-0 relative z-20"
+      />
+
+      <div className="flex-none px-4 pb-3 relative z-10">
         <SearchBar
           query={query}
           onChange={handleQueryChange}
@@ -88,7 +119,7 @@ export default function App() {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden">
         {view === 'session' && selectedSession ? (
           <SessionDetail sessionUuid={selectedSession} />
         ) : query.trim() ? (

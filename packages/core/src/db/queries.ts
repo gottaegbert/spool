@@ -39,6 +39,13 @@ export function getSessionMtime(db: Database.Database, filePath: string): string
   return row?.raw_file_mtime ?? null
 }
 
+export function getAllSessionMtimes(db: Database.Database): Map<string, string> {
+  const rows = db
+    .prepare('SELECT file_path, raw_file_mtime FROM sessions')
+    .all() as Array<{ file_path: string; raw_file_mtime: string }>
+  return new Map(rows.map(r => [r.file_path, r.raw_file_mtime]))
+}
+
 export function upsertSession(
   db: Database.Database,
   opts: {

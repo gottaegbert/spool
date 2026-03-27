@@ -133,3 +133,9 @@ ipcMain.handle('spool:copy-fragment', (_e, { text }: { text: string }) => {
   clipboard.writeText(text)
   return { ok: true }
 })
+
+ipcMain.on('spool:move-window', (_e, { dx, dy }: { dx: number; dy: number }) => {
+  if (!mainWindow) return
+  const [x, y] = mainWindow.getPosition()
+  mainWindow.setPosition(x + dx, y + dy)
+})
