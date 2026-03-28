@@ -4,7 +4,7 @@ The missing search engine for your own data.
 
 Search your Claude Code sessions, Codex CLI history, GitHub stars, Twitter bookmarks, and YouTube likes — locally, instantly.
 
-> **Early stage.** Spool is under active development — expect rough edges. Feedback, bug reports, and ideas are very welcome via [Issues](https://github.com/spool-lab/spool/issues) or [Discord](https://discord.gg/spool).
+> **Early stage.** Spool is under active development — expect rough edges. Feedback, bug reports, and ideas are very welcome via [Issues](https://github.com/spool-lab/spool/issues) or [Discord](https://discord.gg/aqeDxQUs5E).
 
 ## Install
 
