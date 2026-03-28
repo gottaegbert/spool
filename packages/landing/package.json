@@ -1,6 +1,6 @@
 {
   "name": "@spool/landing",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "scripts": {
     "dev": "npx serve public -l 3001",
