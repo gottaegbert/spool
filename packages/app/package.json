@@ -1,6 +1,6 @@
 {
   "name": "@spool/app",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "productName": "Spool",
   "main": "./out/main/index.js",
@@ -41,7 +41,9 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["arm64"]
+          "arch": [
+            "arm64"
+          ]
         }
       ]
     },
@@ -49,8 +51,16 @@
       "title": "Spool",
       "iconSize": 80,
       "contents": [
-        { "x": 130, "y": 220 },
-        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
       ]
     }
   },
