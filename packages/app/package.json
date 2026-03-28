@@ -6,7 +6,7 @@
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
-    "build": "electron-vite build && electron-builder",
+    "build": "electron-vite build && electron-builder --mac --arm64",
     "build:electron": "electron-vite build",
     "preview": "electron-vite preview",
     "clean": "rm -rf out dist-electron",
@@ -37,7 +37,21 @@
     ],
     "mac": {
       "category": "public.app-category.developer-tools",
-      "icon": "resources/icon.icns"
+      "icon": "resources/icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["arm64"]
+        }
+      ]
+    },
+    "dmg": {
+      "title": "Spool",
+      "iconSize": 80,
+      "contents": [
+        { "x": 130, "y": 220 },
+        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+      ]
     }
   },
   "devDependencies": {
