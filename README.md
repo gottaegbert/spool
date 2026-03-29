@@ -12,9 +12,11 @@ Search your Claude Code sessions, Codex CLI history, GitHub stars, Twitter bookm
 
 ## Install
 
-Download the latest `.dmg` from [Releases](https://github.com/spool-lab/spool/releases/latest). Apple Silicon only.
+```bash
+curl -fsSL https://spool.pro/install.sh | bash
+```
 
-Or build from source:
+macOS / Apple Silicon only. Or build from source:
 
 ```bash
 pnpm install

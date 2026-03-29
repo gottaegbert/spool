@@ -78,7 +78,10 @@ jobs:
 
           ## Install
 
-          Download **${{ steps.dmg.outputs.name }}** and drag Spool to your Applications folder.
+          \`\`\`bash
+          curl -fsSL https://spool.pro/install.sh | bash
+          \`\`\`
+
           Requires macOS on Apple Silicon (M1+).
 
           > This is an early release — feedback and bug reports welcome via [Issues](https://github.com/spool-lab/spool/issues)."

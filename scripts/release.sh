@@ -87,7 +87,10 @@ $NOTES
 
 ## Install
 
-Download **$DMG_NAME** and drag Spool to your Applications folder.
+\`\`\`bash
+curl -fsSL https://spool.pro/install.sh | bash
+\`\`\`
+
 Requires macOS on Apple Silicon (M1+).
 NOTES_EOF
 
