@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import type { Session, Message } from '@spool/core'
 import MessageBubble from './MessageBubble.js'
 
-interface Props {
+type Props = {
   sessionUuid: string
+  onCopySessionId: (source: Session['source']) => void
 }
 
-export default function SessionDetail({ sessionUuid }: Props) {
+export default function SessionDetail({ sessionUuid, onCopySessionId }: Props) {
   const [session, setSession] = useState<Session | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,16 +39,35 @@ export default function SessionDetail({ sessionUuid }: Props) {
     )
   }
 
+  async function handleCopySessionId() {
+    await navigator.clipboard.writeText(session.sessionUuid)
+    onCopySessionId(session.source)
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Session header */}
-      <div className="flex-none px-4 py-2 border-b border-neutral-100 dark:border-neutral-800">
-        <p className="text-xs font-medium text-neutral-500 truncate">{session.projectDisplayPath}</p>
-        <p className="text-sm text-neutral-800 dark:text-neutral-200 mt-0.5 truncate">{session.title ?? '(no title)'}</p>
-        <p className="text-xs text-neutral-400 mt-0.5">
-          {formatDate(session.startedAt)} · {session.messageCount} messages
-          {session.model && ` · ${session.model}`}
-        </p>
+      <div className="flex items-end justify-between gap-3 flex-none px-4 py-2 border-b border-neutral-100 dark:border-neutral-800">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-medium text-neutral-500 truncate">{session.projectDisplayPath}</p>
+          <p className="text-sm text-neutral-800 dark:text-neutral-200 mt-0.5 truncate">{session.title ?? '(no title)'}</p>
+          <p className="text-xs text-neutral-400 mt-0.5">
+            {formatDate(session.startedAt)} · {session.messageCount} messages
+            {session.model && ` · ${session.model}`}
+          </p>
+        </div>
+
+        <button
+          onClick={handleCopySessionId}
+          title="Copy session ID for CLI resume"
+          className="flex items-center gap-1.5 self-end text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded px-2.5 py-1 transition-colors flex-none"
+        >
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <rect x="4.5" y="4.5" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.2"/>
+            <path d="M8.5 4.5V3C8.5 2.17 7.83 1.5 7 1.5H3C2.17 1.5 1.5 2.17 1.5 3V7C1.5 7.83 2.17 8.5 3 8.5H4.5" stroke="currentColor" strokeWidth="1.2"/>
+          </svg>
+          Copy Session ID
+        </button>
       </div>
 
       {/* Messages */}

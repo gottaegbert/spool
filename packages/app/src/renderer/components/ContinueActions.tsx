@@ -1,19 +1,19 @@
 import { useState } from 'react'
 import type { FragmentResult } from '@spool/core'
 
-interface Props {
+type Props = {
   result: FragmentResult
   onOpenSession: (uuid: string) => void
+  onCopySessionId: (source: FragmentResult['source']) => void
 }
 
-export default function ContinueActions({ result, onOpenSession }: Props) {
+export default function ContinueActions({ result, onOpenSession, onCopySessionId }: Props) {
   const [copied, setCopied] = useState(false)
   const [resuming, setResuming] = useState(false)
 
-  const plainSnippet = result.snippet.replace(/<\/?mark>/g, '')
-
   async function handleCopy() {
-    await window.spool.copyFragment(plainSnippet)
+    await navigator.clipboard.writeText(result.sessionUuid)
+    onCopySessionId(result.source)
     setCopied(true)
     setTimeout(() => setCopied(false), 1500)
   }
@@ -26,23 +26,18 @@ export default function ContinueActions({ result, onOpenSession }: Props) {
 
   return (
     <div className="flex items-center gap-1 mt-2">
-      <ActionButton onClick={handleCopy} title="Copy fragment to clipboard">
-        {copied ? (
-          <>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-              <path d="M2 7L5 10L11 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Copied
-          </>
-        ) : (
-          <>
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+      <ActionButton onClick={handleCopy} title="Copy session ID for CLI resume">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+          {copied ? (
+            <path d="M2 7L5 10L11 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          ) : (
+            <>
               <rect x="4.5" y="4.5" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.2"/>
               <path d="M8.5 4.5V3C8.5 2.17 7.83 1.5 7 1.5H3C2.17 1.5 1.5 2.17 1.5 3V7C1.5 7.83 2.17 8.5 3 8.5H4.5" stroke="currentColor" strokeWidth="1.2"/>
-            </svg>
-            Copy
-          </>
-        )}
+            </>
+          )}
+        </svg>
+        Copy Session ID
       </ActionButton>
 
       {result.source === 'claude' && (
