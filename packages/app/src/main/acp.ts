@@ -344,10 +344,16 @@ export class AcpManager {
 
     const conn = new acp.ClientSideConnection(() => ({
       requestPermission: async (params: { options?: Array<{ optionId: string; kind?: string }> }) => {
-        // Auto-approve: pick the first allow/approve option from the agent's list
-        const options = params.options ?? []
-        const allowOption = options.find(o => o.kind?.startsWith('allow')) ?? options[0]
-        return { outcome: { outcome: 'selected' as const, optionId: allowOption?.optionId ?? 'allow' } }
+        try {
+          // Auto-approve: pick the first allow/approve option from the agent's list
+          const options = params.options ?? []
+          const allowOption = options.find(o => o.kind?.startsWith('allow')) ?? options[0]
+          console.log(`[ACP] requestPermission: picking optionId=${allowOption?.optionId}`)
+          return { outcome: { outcome: 'selected' as const, optionId: allowOption?.optionId ?? 'allow' } }
+        } catch (e) {
+          console.error('[ACP] requestPermission error:', e)
+          return { outcome: { outcome: 'selected' as const, optionId: 'allow' } }
+        }
       },
       extMethod: async () => ({}),
       createTerminal: async (params: TerminalParams) => {
@@ -399,37 +405,41 @@ export class AcpManager {
         }
       },
       sessionUpdate: async (notification: SessionNotification) => {
-        const update = notification.update
-        if (!update || !('sessionUpdate' in update)) return
+        try {
+          const update = notification.update
+          if (!update || !('sessionUpdate' in update)) return
 
-        switch (update.sessionUpdate) {
-          case 'agent_message_chunk': {
-            const content = update.content
-            if (content?.type === 'text' && content.text) {
-              const text = typeof content.text === 'string' ? content.text : JSON.stringify(content.text)
-              fullText += text
-              onChunk(text)
+          switch (update.sessionUpdate) {
+            case 'agent_message_chunk': {
+              const content = update.content
+              if (content?.type === 'text' && content.text) {
+                const text = typeof content.text === 'string' ? content.text : JSON.stringify(content.text)
+                fullText += text
+                onChunk(text)
+              }
+              break
             }
-            break
+            case 'tool_call': {
+              onToolCall?.({
+                toolCallId: update.toolCallId ?? `tool-${Date.now()}`,
+                title: update.title ?? 'Tool call',
+                status: update.status ?? 'in_progress',
+                kind: update.kind,
+              })
+              break
+            }
+            case 'tool_call_update': {
+              onToolCall?.({
+                toolCallId: update.toolCallId ?? `tool-${Date.now()}`,
+                title: update.title ?? '',
+                status: update.status ?? 'in_progress',
+                kind: update.kind,
+              })
+              break
+            }
           }
-          case 'tool_call': {
-            onToolCall?.({
-              toolCallId: update.toolCallId,
-              title: update.title ?? 'Tool call',
-              status: update.status ?? 'in_progress',
-              kind: update.kind,
-            })
-            break
-          }
-          case 'tool_call_update': {
-            onToolCall?.({
-              toolCallId: update.toolCallId,
-              title: update.title ?? '',
-              status: update.status ?? 'in_progress',
-              kind: update.kind,
-            })
-            break
-          }
+        } catch (e) {
+          console.error('[ACP sessionUpdate] handler error:', e)
         }
       },
     }), stream)

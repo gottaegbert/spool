@@ -221,6 +221,8 @@ ipcMain.handle('spool:ai-search', async (_e, { query, agentId, context }: { quer
     return { ok: true, fullText }
   } catch (err) {
     const error = err instanceof Error ? err.message : (typeof err === 'object' && err !== null && 'message' in err) ? String((err as any).message) : String(err)
+    console.error('[spool:ai-search] Agent query failed:', error)
+    if (err instanceof Error && err.stack) console.error(err.stack)
     mainWindow?.webContents.send('spool:ai-done', { fullText: '', error })
     return { ok: false, error }
   }
