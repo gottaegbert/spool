@@ -32,9 +32,16 @@ const themeIcons: Record<Theme, ReactNode> = {
   ),
 }
 
+interface UpdateStatus {
+  status: 'downloading' | 'ready'
+  version?: string
+  percent?: number
+}
+
 export default function StatusBar({ syncStatus, searchMode = 'fast', aiAgent, onSourcesClick, onSettingsClick }: Props) {
   const [status, setStatus] = useState<StatusInfo | null>(null)
   const [theme, setTheme] = useState<Theme>('system')
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null)
 
   useEffect(() => {
     if (!window.spool) return
@@ -44,6 +51,11 @@ export default function StatusBar({ syncStatus, searchMode = 'fast', aiAgent, on
   useEffect(() => {
     if (!window.spool) return
     window.spool.getTheme().then(t => { if (t) setTheme(t) }).catch(console.error)
+  }, [])
+
+  useEffect(() => {
+    if (!window.spool?.onUpdateStatus) return () => {}
+    return window.spool.onUpdateStatus(setUpdateStatus)
   }, [])
 
   const cycleTheme = () => {
@@ -73,6 +85,15 @@ export default function StatusBar({ syncStatus, searchMode = 'fast', aiAgent, on
         </span>
       </div>
       <div className="flex items-center gap-3">
+        {updateStatus?.status === 'ready' && (
+          <button
+            onClick={() => window.spool?.installUpdate()}
+            className="text-[11px] text-accent dark:text-accent-dark hover:opacity-80 transition-opacity font-medium"
+            title={`Update to ${updateStatus.version}`}
+          >
+            Update available — restart
+          </button>
+        )}
         <button
           onClick={cycleTheme}
           title={`Theme: ${theme}`}

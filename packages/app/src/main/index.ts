@@ -9,6 +9,7 @@ import {
 } from '@spool/core'
 import { setupTray } from './tray.js'
 import { AcpManager } from './acp.js'
+import { setupAutoUpdater, quitAndInstall } from './updater.js'
 import { execSync } from 'node:child_process'
 import type Database from 'better-sqlite3'
 
@@ -91,6 +92,9 @@ app.whenReady().then(() => {
   })
 
   mainWindow = createWindow()
+
+  // Auto-updater (only runs in packaged builds)
+  setupAutoUpdater(() => mainWindow)
 
   // Background mode — hide from dock when window is closed
   mainWindow.on('closed', () => {
@@ -231,6 +235,12 @@ ipcMain.handle('spool:ai-search', async (_e, { query, agentId, context }: { quer
 ipcMain.handle('spool:ai-cancel', () => {
   acpManager.cancel()
   return { ok: true }
+})
+
+// ── Auto-update ──────────────────────────────────────────────────────────
+
+ipcMain.handle('spool:install-update', () => {
+  quitAndInstall()
 })
 
 // ── OpenCLI Handlers ──────────────────────────────────────────────────────

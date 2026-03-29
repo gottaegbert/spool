@@ -157,6 +157,16 @@ const api = {
     ipcRenderer.on('spool:open-capture-modal', handler)
     return () => ipcRenderer.removeListener('spool:open-capture-modal', handler)
   },
+
+  // Auto-update
+  onUpdateStatus: (cb: (data: { status: 'downloading' | 'ready'; version?: string; percent?: number }) => void) => {
+    const handler = (_: Electron.IpcRendererEvent, data: unknown) => cb(data as { status: 'downloading' | 'ready'; version?: string; percent?: number })
+    ipcRenderer.on('spool:update-status', handler)
+    return () => ipcRenderer.removeListener('spool:update-status', handler)
+  },
+
+  installUpdate: (): Promise<void> =>
+    ipcRenderer.invoke('spool:install-update'),
 }
 
 contextBridge.exposeInMainWorld('spool', api)
