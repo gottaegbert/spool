@@ -33,7 +33,7 @@ const themeIcons: Record<Theme, ReactNode> = {
 }
 
 interface UpdateStatus {
-  status: 'downloading' | 'ready'
+  status: 'available' | 'downloading' | 'ready'
   version?: string
   percent?: number
 }
@@ -85,13 +85,29 @@ export default function StatusBar({ syncStatus, searchMode = 'fast', aiAgent, on
         </span>
       </div>
       <div className="flex items-center gap-3">
+        {updateStatus?.status === 'available' && (
+          <button
+            onClick={() => window.spool?.downloadUpdate()}
+            className="flex items-center gap-1.5 text-[11px] text-accent dark:text-accent-dark hover:opacity-80 transition-opacity font-medium"
+            title={`Update to ${updateStatus.version}`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-accent dark:bg-accent-dark" />
+            v{updateStatus.version} available
+          </button>
+        )}
+        {updateStatus?.status === 'downloading' && (
+          <span className="text-[11px] text-warm-muted dark:text-dark-muted font-mono">
+            Updating{updateStatus.percent != null ? ` ${updateStatus.percent}%` : '…'}
+          </span>
+        )}
         {updateStatus?.status === 'ready' && (
           <button
             onClick={() => window.spool?.installUpdate()}
-            className="text-[11px] text-accent dark:text-accent-dark hover:opacity-80 transition-opacity font-medium"
-            title={`Update to ${updateStatus.version}`}
+            className="flex items-center gap-1.5 text-[11px] text-accent dark:text-accent-dark hover:opacity-80 transition-opacity font-medium"
+            title={`Restart to update to ${updateStatus.version}`}
           >
-            Update available — restart
+            <span className="w-1.5 h-1.5 rounded-full bg-accent dark:bg-accent-dark" />
+            Restart to update
           </button>
         )}
         <button

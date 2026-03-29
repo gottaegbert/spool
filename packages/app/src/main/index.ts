@@ -9,7 +9,7 @@ import {
 } from '@spool/core'
 import { setupTray } from './tray.js'
 import { AcpManager } from './acp.js'
-import { setupAutoUpdater, quitAndInstall } from './updater.js'
+import { setupAutoUpdater, downloadUpdate, quitAndInstall } from './updater.js'
 import { execSync } from 'node:child_process'
 import type Database from 'better-sqlite3'
 
@@ -238,6 +238,10 @@ ipcMain.handle('spool:ai-cancel', () => {
 })
 
 // ── Auto-update ──────────────────────────────────────────────────────────
+
+ipcMain.handle('spool:download-update', () => {
+  downloadUpdate()
+})
 
 ipcMain.handle('spool:install-update', () => {
   quitAndInstall()
