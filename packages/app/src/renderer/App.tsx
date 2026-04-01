@@ -266,7 +266,9 @@ export default function App() {
     toastTimer.current = setTimeout(() => setResumeToastSource(null), 3200)
   }, [])
 
-  const activeAgentName = availableAgents.find(a => a.id === aiAgent)?.name ?? aiAgent
+  const activeAgentInfo = availableAgents.find(a => a.id === aiAgent)
+  const activeAgentName = activeAgentInfo?.name ?? aiAgent
+  const activeAgentMode = activeAgentInfo?.acpMode
   const hasAgents = availableAgents.length > 0
 
   return (
@@ -324,6 +326,7 @@ export default function App() {
                       answer={aiAnswer}
                       streaming={aiStreaming}
                       agentName={activeAgentName}
+                      agentMode={activeAgentMode}
                       sources={results}
                       error={aiError}
                       toolCalls={aiToolCalls}
@@ -365,6 +368,7 @@ export default function App() {
         syncStatus={syncStatus}
         searchMode={searchMode}
         aiAgent={activeAgentName}
+        aiAgentMode={activeAgentMode}
         onSourcesClick={() => setShowSourcesPanel(true)}
         onSettingsClick={() => setShowSettings(true)}
       />

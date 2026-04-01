@@ -6,6 +6,7 @@ interface Props {
   syncStatus: { phase: string; count: number; total: number } | null
   searchMode?: SearchMode
   aiAgent?: string
+  aiAgentMode?: string
   onSourcesClick?: () => void
   onSettingsClick?: () => void
 }
@@ -38,7 +39,7 @@ interface UpdateStatus {
   percent?: number
 }
 
-export default function StatusBar({ syncStatus, searchMode = 'fast', aiAgent, onSourcesClick, onSettingsClick }: Props) {
+export default function StatusBar({ syncStatus, searchMode = 'fast', aiAgent, aiAgentMode, onSourcesClick, onSettingsClick }: Props) {
   const [status, setStatus] = useState<StatusInfo | null>(null)
   const [theme, setTheme] = useState<Theme>('system')
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null)
@@ -72,7 +73,7 @@ export default function StatusBar({ syncStatus, searchMode = 'fast', aiAgent, on
 
   const isAiMode = searchMode === 'ai'
   const statusText = isAiMode
-    ? `✦ ACP · ${aiAgent ?? 'agent'} · local`
+    ? `✦ ${aiAgentMode === 'sdk' ? 'API' : 'ACP'} · ${aiAgent ?? 'agent'} · local`
     : getSyncStatusText(syncStatus, status)
   const isOk = !syncStatus || syncStatus.phase === 'done'
 
