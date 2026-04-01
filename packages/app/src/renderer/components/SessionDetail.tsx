@@ -1,16 +1,19 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import type { Session, Message } from '@spool/core'
 import MessageBubble from './MessageBubble.js'
 
 type Props = {
   sessionUuid: string
+  targetMessageId?: number | null
   onCopySessionId: (source: Session['source']) => void
 }
 
-export default function SessionDetail({ sessionUuid, onCopySessionId }: Props) {
+export default function SessionDetail({ sessionUuid, targetMessageId, onCopySessionId }: Props) {
   const [session, setSession] = useState<Session | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
+  const [showHighlight, setShowHighlight] = useState(false)
+  const targetRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     setLoading(true)
@@ -22,6 +25,15 @@ export default function SessionDetail({ sessionUuid, onCopySessionId }: Props) {
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [sessionUuid])
+
+  useEffect(() => {
+    if (!loading && targetMessageId && targetRef.current) {
+      targetRef.current.scrollIntoView({ behavior: 'instant', block: 'center' })
+      setShowHighlight(true)
+      const timer = setTimeout(() => setShowHighlight(false), 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [loading, targetMessageId])
 
   if (loading) {
     return (
@@ -40,6 +52,7 @@ export default function SessionDetail({ sessionUuid, onCopySessionId }: Props) {
   }
 
   async function handleCopySessionId() {
+    if (!session) return
     await navigator.clipboard.writeText(session.sessionUuid)
     onCopySessionId(session.source)
   }
@@ -73,7 +86,15 @@ export default function SessionDetail({ sessionUuid, onCopySessionId }: Props) {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto divide-y divide-neutral-50 dark:divide-neutral-800/50">
         {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} />
+          <div
+            key={msg.id}
+            ref={msg.id === targetMessageId ? targetRef : undefined}
+            className={msg.id === targetMessageId
+              ? `transition-colors duration-700 ${showHighlight ? 'bg-accent/10 dark:bg-accent-dark/10' : ''}`
+              : undefined}
+          >
+            <MessageBubble message={msg} />
+          </div>
         ))}
         {messages.length === 0 && (
           <div className="flex items-center justify-center h-32 text-neutral-400">
