@@ -22,11 +22,11 @@ Spool watches your session directories in real time. Every conversation becomes 
 
 It also indexes data from 50+ platforms via [OpenCLI](https://github.com/jackwener/opencli): your GitHub stars, Twitter bookmarks, Reddit saves, and more. All local, all on your machine.
 
-## Agent-native search
+## What's next: agent-native search
 
 The key insight: your coding agent is already the best search engine you have. It just needs access to your personal data.
 
-With the `/spool` skill in Claude Code, your agent can search your past sessions and pull matching context directly into the current conversation. Ask it to "build on last month's auth discussion" and it actually can.
+We're building a `/spool` skill for Claude Code and a standalone CLI so your agent can search your past sessions and pull matching context directly into the current conversation. Ask it to "build on last month's auth discussion" and it will actually be able to.
 
 ## Try it
 
