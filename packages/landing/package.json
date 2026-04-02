@@ -11,6 +11,7 @@
     "clean": "rm -rf dist .astro"
   },
   "dependencies": {
+    "@astrojs/rss": "^4.0.0",
     "@astrojs/sitemap": "^3.3.0",
     "@astrojs/starlight": "^0.37.0",
     "astro": "^5.18.0",

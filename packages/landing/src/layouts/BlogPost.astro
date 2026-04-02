@@ -8,6 +8,20 @@ interface Props {
 const { post } = Astro.props;
 const { title, description, date, author, tags } = post.data;
 const formattedDate = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+const canonicalURL = Astro.url.href;
+const isoDate = date.toISOString();
+
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: title,
+  description,
+  datePublished: isoDate,
+  author: { "@type": "Person", name: author },
+  publisher: { "@type": "Organization", name: "Spool", url: "https://spool.pro" },
+  url: canonicalURL,
+  image: "https://spool.pro/og-image.png",
+});
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -16,12 +30,24 @@ const formattedDate = date.toLocaleDateString('en-US', { year: 'numeric', month:
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{title} — Spool Blog</title>
   <meta name="description" content={description}>
+  <link rel="canonical" href={canonicalURL}>
 
   <meta property="og:type" content="article">
+  <meta property="og:url" content={canonicalURL}>
   <meta property="og:title" content={title}>
   <meta property="og:description" content={description}>
   <meta property="og:image" content="https://spool.pro/og-image.png">
+  <meta property="og:site_name" content="Spool">
+  <meta property="article:published_time" content={isoDate}>
+  <meta property="article:author" content={author}>
+
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content={title}>
+  <meta name="twitter:description" content={description}>
+  <meta name="twitter:image" content="https://spool.pro/og-image.png">
+
+  <link rel="alternate" type="application/rss+xml" title="Spool Blog" href="/blog/rss.xml">
+  <script type="application/ld+json" set:html={jsonLd} />
 
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
