@@ -7,7 +7,7 @@ permissions:
   contents: write
 
 jobs:
-  build-and-release:
+  build-mac:
     runs-on: macos-latest
     timeout-minutes: 30
     steps:
@@ -38,27 +38,87 @@ jobs:
         id: version
         run: echo "version=$(jq -r .version packages/app/package.json)" >> "$GITHUB_OUTPUT"
 
-      - name: Find build artifacts
-        id: artifacts
+      - name: Rename artifacts
         run: |
           VERSION="${{ steps.version.outputs.version }}"
 
-          # DMG
           DMG=$(find packages/app/dist -name "*.dmg" ! -name "*.blockmap" | head -1)
-          DMG_FINAL="packages/app/dist/Spool-${VERSION}-arm64.dmg"
-          mv "$DMG" "$DMG_FINAL"
-          echo "dmg_path=$DMG_FINAL" >> "$GITHUB_OUTPUT"
-          echo "dmg_name=Spool-${VERSION}-arm64.dmg" >> "$GITHUB_OUTPUT"
+          mv "$DMG" "packages/app/dist/Spool-${VERSION}-arm64.dmg"
 
-          # ZIP (required by electron-updater for macOS auto-update)
           ZIP=$(find packages/app/dist -name "*.zip" | head -1)
-          ZIP_FINAL="packages/app/dist/Spool-${VERSION}-arm64-mac.zip"
-          mv "$ZIP" "$ZIP_FINAL"
-          echo "zip_path=$ZIP_FINAL" >> "$GITHUB_OUTPUT"
+          mv "$ZIP" "packages/app/dist/Spool-${VERSION}-arm64-mac.zip"
 
-          # latest-mac.yml (electron-updater metadata)
-          YML=$(find packages/app/dist -name "latest-mac.yml" | head -1)
-          echo "yml_path=$YML" >> "$GITHUB_OUTPUT"
+      - name: Upload mac artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-artifacts
+          path: |
+            packages/app/dist/Spool-*.dmg
+            packages/app/dist/Spool-*-mac.zip
+            packages/app/dist/latest-mac.yml
+
+  build-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build app (AppImage + tar.gz)
+        run: |
+          pnpm --filter @spool/core build
+          cd packages/app
+          npx electron-vite build
+          npx electron-builder --linux --publish never
+
+      - name: Get version
+        id: version
+        run: echo "version=$(jq -r .version packages/app/package.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Rename artifacts
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          APPIMAGE=$(find packages/app/dist -name "*.AppImage" | head -1)
+          mv "$APPIMAGE" "packages/app/dist/Spool-${VERSION}-x86_64.AppImage"
+
+      - name: Upload linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: |
+            packages/app/dist/Spool-*.AppImage
+            packages/app/dist/latest-linux.yml
+
+  release:
+    needs: [build-mac, build-linux]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version
+        id: version
+        run: echo "version=$(jq -r .version packages/app/package.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
 
       - name: Generate release notes
         id: notes
@@ -80,7 +140,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="v${{ steps.version.outputs.version }}"
-          ASSETS="${{ steps.artifacts.outputs.dmg_path }} ${{ steps.artifacts.outputs.zip_path }} ${{ steps.artifacts.outputs.yml_path }}"
+          ASSETS=$(find artifacts -type f | tr '\n' ' ')
           # Upload assets to existing release, or create one if missing
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" $ASSETS --clobber
@@ -93,11 +153,13 @@ jobs:
 
           ## Install
 
+          **macOS (Apple Silicon)**
           \`\`\`bash
           curl -fsSL https://spool.pro/install.sh | bash
           \`\`\`
 
-          Requires macOS on Apple Silicon (M1+).
+          **Linux (x86_64)**
+          Download the AppImage or tar.gz from the assets below.
 
           > This is an early release — feedback and bug reports welcome via [Issues](https://github.com/spool-lab/spool/issues)."
           fi
