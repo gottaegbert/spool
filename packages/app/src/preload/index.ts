@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { FragmentResult, Session, Message, StatusInfo, SyncResult, SearchResult, ConnectorStatus, AuthStatus, SchedulerStatus } from '@spool/core'
 import type { SearchSortOrder } from '../shared/searchSort.js'
+import type { ThemeEditorStateV1 } from '../renderer/theme/editorTypes.js'
 
 export interface AgentInfo {
   id: string
@@ -121,6 +122,12 @@ const api = {
 
   setTheme: (theme: 'system' | 'light' | 'dark'): Promise<{ ok: boolean }> =>
     ipcRenderer.invoke('spool:set-theme', { theme }),
+
+  getThemeEditorState: (): Promise<ThemeEditorStateV1 | null> =>
+    ipcRenderer.invoke('spool:get-theme-editor-state'),
+
+  setThemeEditorState: (state: ThemeEditorStateV1): Promise<{ ok: boolean }> =>
+    ipcRenderer.invoke('spool:set-theme-editor-state', { state }),
 
   // ── Connectors ──
 

@@ -14,6 +14,7 @@ import { setupAutoUpdater, downloadUpdate, quitAndInstall } from './updater.js'
 import { openTerminal } from './terminal.js'
 import { getSessionResumeCommand } from '../shared/resumeCommand.js'
 import { resolveResumeWorkingDirectory } from './sessionResume.js'
+import { loadUIPreferences, saveThemeEditor, saveThemeSource } from './uiPreferences.js'
 import type Database from 'better-sqlite3'
 import type { SyncWorkerMessage } from './sync-worker.js'
 
@@ -24,6 +25,8 @@ if (customUserDataDir) {
 }
 // macOS menu bar shows the first menu's label as the app name
 app.setName(isDevMode ? 'Spool DEV' : 'Spool')
+const uiPreferences = loadUIPreferences()
+nativeTheme.themeSource = uiPreferences.themeSource
 let focusExistingWindow = () => {}
 
 const gotSingleInstanceLock = app.requestSingleInstanceLock()
@@ -320,7 +323,19 @@ ipcMain.handle('spool:get-theme', () => {
 })
 
 ipcMain.handle('spool:set-theme', (_e, { theme }: { theme: 'system' | 'light' | 'dark' }) => {
+  uiPreferences.themeSource = theme
   nativeTheme.themeSource = theme
+  saveThemeSource(theme)
+  return { ok: true }
+})
+
+ipcMain.handle('spool:get-theme-editor-state', () => {
+  return uiPreferences.themeEditor
+})
+
+ipcMain.handle('spool:set-theme-editor-state', (_e, { state }: { state: import('../renderer/theme/editorTypes.js').ThemeEditorStateV1 }) => {
+  uiPreferences.themeEditor = state
+  saveThemeEditor(state)
   return { ok: true }
 })
 
